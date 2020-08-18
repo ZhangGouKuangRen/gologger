@@ -30,10 +30,13 @@ func NewDatabaseLog(driver, username, passwd, ip string, port int64, databaseNam
 }
 
 func (dbl *databaseLog)AddTable(table *logTable)  {
-	judgeSql := "SELECT table_name FROM information_schema.TABLES WHERE table_name ='"+table.tableName+"';"
-	rows, _ := dbl.db.Query(judgeSql)
-	t, _ :=rows.Columns()
-	if len(t) == 0 {
+	countTableSql := "SELECT count(*) FROM information_schema.TABLES WHERE TABLE_NAME ='"+table.tableName+"' and TABLE_SCHEMA ='" + dbl.databaseName+"';"
+	tables, _ := dbl.db.Query(countTableSql)
+	tableNum := 0
+	for tables.Next() {
+		tables.Scan(&tableNum)
+	}
+	if tableNum == 0 {
 		idcol := "id int primary key auto_increment not null,"
 		var otherCols string
 		for _, col := range table.cols{
@@ -46,6 +49,7 @@ func (dbl *databaseLog)AddTable(table *logTable)  {
 			panic(createErr)
 		}
 	}
+
 	dbl.logTables = append(dbl.logTables, table)
 }
 

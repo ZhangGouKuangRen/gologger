@@ -24,6 +24,13 @@ func NewLogTable(tableName string, cols ...LogAttrubutes)*logTable  {
 		tableSelfLevel: DEBUG,
 	}
 }
+func newLogTableXML(tableName string, cols []LogAttrubutes)*logTable  {
+	return &logTable{
+		tableName: tableName,
+		cols: cols,
+		tableSelfLevel: DEBUG,
+	}
+}
 
 func (lt *logTable)SetTableSelfLevel(level logLevel)  {
 	lt.tableSelfLevel = level

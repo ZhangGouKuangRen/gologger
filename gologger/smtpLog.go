@@ -32,7 +32,7 @@ func (sl *smtpLog)SetRecipient(recipient []string)  {
 	sl.to = recipient
 }
 
-func (sl *smtpLog)SetSelfMailLevel(level logLevel)  {
+func (sl *smtpLog) SetMailSelfLogLevel(level logLevel)  {
 	sl.hasMailSelfLevel=true
 	sl.mailSelfLevel=level
 }

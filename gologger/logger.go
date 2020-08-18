@@ -175,5 +175,7 @@ func (lgr *logger)Flush(){
 	for _, dailyRollingFile := range lgr.dailyRollingFiles {
 		dailyRollingFile.ofile.Close()
 	}
-	lgr.db.Close()
+	if lgr.databaseLog != nil {
+		lgr.databaseLog.db.Close()
+	}
 }
