@@ -3,13 +3,15 @@ package gologger
 import (
 	"encoding/xml"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 )
+
+var formatMap = make(map[string]formatXML)
 
 type gologger struct {
 	GlobalLevel       string            `xml:"globalLevel,attr"`
@@ -118,121 +120,22 @@ func GetLoggerByXML(xmlconfig string) (*logger, error) {
 	databaselog := gologgerXML.DatabaseLog
 	smtplog := gologgerXML.Smtplog
 
-	fmt.Println("consoleXML:",consoleXML)
-	fmt.Println("wholefiles:",wholefiles)
-	fmt.Println("dailyrollingfiles:", dailyrollingfiles)
-	fmt.Println("sizerollingfiles:", sizerollingfiles)
-	fmt.Println("databaselog:", databaselog)
-	fmt.Println("smtplog:", smtplog)
-
 	formatXMLs := gologgerXML.FormatXMLs
-	formatMap := make(map[string]formatXML)
 	for _, formatXML := range formatXMLs.FormatXML {
 		formatMap[formatXML.Id] = formatXML
 	}
-
 	logger := NewLogger(gologgerXML.GlobalLevel)
 
-	consoleSelfLevel, consoleSelfLevelErr := parseLogLevel(consoleXML.SelfLevel)
-	if consoleSelfLevelErr != nil {
-		return nil, consoleSelfLevelErr
-	}
-	logger.SetConsoleSelfLogLevel(consoleSelfLevel)
-	enableConsole, enconErr := strconv.ParseBool(consoleXML.Enable)
-	if enconErr != nil {
-		return nil, enconErr
-	}
-	logger.EnableConsole(enableConsole)
-
-	for _, wholefile := range wholefiles.WholeFile {
-		wf := NewWholeFile(wholefile.Path)
-		wholefileSelfLevel, wfsErr := parseLogLevel(wholefile.SelfLevel)
-		if wfsErr != nil {
-			return nil, wfsErr
-		}
-		wf.SetWholeFileSelfLogLevel(wholefileSelfLevel)
-		wf.SetWholeFileFormat(NewFormat(formatMap[wholefile.FormatId.Ref].Format))
-		logger.AddWholeFile(wf)
-	}
-
-	for _, dailyrollingfile := range dailyrollingfiles.DailyRollingFile {
-		drf := NewDailyRollingFile(dailyrollingfile.Path)
-		dailyrollingfileSelfLevel, drfLevelErr := parseLogLevel(dailyrollingfile.SelfLevel)
-		if drfLevelErr != nil {
-			return nil, drfLevelErr
-		}
-		drf.SetDailyRollingFileSelfLogLevel(dailyrollingfileSelfLevel)
-		days, dayErr := strconv.ParseInt(dailyrollingfile.Day, 10, 64)
-		if dayErr != nil {
-			return nil, dayErr
-		}
-		drf.SetLogFiletMaxDays(int(days))
-		drf.SetDailyRollingFileFormat(NewFormat(formatMap[dailyrollingfile.FormatId.Ref].Format))
-		logger.AddDailyRollingFile(drf)
-	}
-
-	for _, sizerollingfile := range sizerollingfiles.SizeRollingFile {
-		srf := NewSizeRollingFile(sizerollingfile.Path)
-		srfLevel, srfLevelErr := parseLogLevel(sizerollingfile.SelfLevel)
-		if srfLevelErr != nil {
-			return nil, errors.New("sizerollingfile selflevel parse error")
-		}
-		srf.SetSizeRollingFileSelfLogLevel(srfLevel)
-		size, sizeErr := strconv.ParseInt(sizerollingfile.Size, 10, 64)
-		if sizeErr != nil {
-			return nil, errors.New("sizerollingfile size parse error")
-		}
-		if size < 0 {
-			return nil, errors.New("sizerollingfile size cannot <0")
-		}
-		srf.SetMaxSize(size * 1024 * 1024)
-		srf.SetSizeRollingFileFormat(NewFormat(formatMap[sizerollingfile.FormatId.Ref].Format))
-		logger.AddSizeRollingFile(srf)
-	}
-
-	port, portErr := strconv.ParseInt(databaselog.Port, 10, 64)
-	if portErr != nil {
-		return nil, errors.New("xxx/gologger/databaselog/port: cannot parse port to int64")
-	}
-	ip := net.ParseIP(databaselog.Ip)
-	if ip == nil {
-		return nil, errors.New("xxx/gologger/databaselog/ip: cannot parse ip")
-	}
-	dbl := NewDatabaseLog(databaselog.Driver, databaselog.Username, databaselog.Password, ip.String(), port, databaselog.Databasename)
-	tables := databaselog.Tables.Table
-	for _, table := range tables {
-		cols := parseAttributes(table.Attributes.Attribute)
-		logTable := newLogTableXML(table.Name, cols)
-		logTableSelfLevel, ltslErr := parseLogLevel(table.SelfLevel)
-		if ltslErr != nil {
-			return nil, errors.New("cannot parse table selflevel")
-		}
-		logTable.SetTableSelfLevel(logTableSelfLevel)
-		dbl.AddTable(logTable)
-	}
-	logger.AddDatabaseLog(dbl)
-
-	if !verifyEmailFormat(smtplog.From){
-		return nil, errors.New("email 'from' format error")
-	}
-	for _, recpt := range smtplog.Recipients.Recipient {
-		if !verifyEmailFormat(recpt){
-			return nil, errors.New("email 'recipient' format error")
-		}
-	}
-	sl := NewSmtpLog(smtplog.Host, smtplog.Password, smtplog.From, smtplog.Port, smtplog.Subject)
-	smtpLogSelfLevel, smtpLevelErr := parseLogLevel(smtplog.SelfLevel)
-	if smtpLevelErr != nil {
-		return nil, errors.New("cannot parse smtolog selflevel")
-	}
-	sl.SetMailSelfLogLevel(smtpLogSelfLevel)
-	sl.SetRecipient(smtplog.Recipients.Recipient)
-	//logger.AddSmtpLog(sl)
-
+	checkErr(configConsole(consoleXML, logger))
+	checkErr(configWholeFiles(wholefiles, logger))
+	checkErr(configDailyRollingFiles(dailyrollingfiles, logger))
+	checkErr(configSizeRollingFiles(sizerollingfiles, logger))
+	checkErr(configDatabaseLog(databaselog, logger))
+	checkErr(configSmtpLog(smtplog, logger))
 	return logger, nil
 }
 
-func parseAttributes(attributes []attribute) []LogAttrubutes {
+func parseAttributes(attributes []attribute) ([]LogAttrubutes, error) {
 	cols := []LogAttrubutes{}
 	for _, attribute := range attributes {
 		switch strings.ToLower(attribute.Name) {
@@ -250,9 +153,11 @@ func parseAttributes(attributes []attribute) []LogAttrubutes {
 			cols = append(cols, Line)
 		case "msg":
 			cols = append(cols, Msg)
+		default:
+			return nil, errors.New("databaselog table attribute "+attribute.Name+" cannot be parsed to gologger keyword")
 		}
 	}
-	return cols
+	return cols, nil
 }
 
 func verifyEmailFormat(email string) bool {
@@ -261,16 +166,221 @@ func verifyEmailFormat(email string) bool {
 	return reg.MatchString(email)
 }
 
-//func configConsole(consoleXML consoleXML, gologger *gologger)(gologger, error)  {
-//	consoleSelfLevel, consoleSelfLevelErr := parseLogLevel(consoleXML.SelfLevel)
-//	if consoleSelfLevelErr != nil {
-//		return nil, consoleSelfLevelErr
-//	}
-//	logger.SetConsoleSelfLogLevel(consoleSelfLevel)
-//	enableConsole, enconErr := strconv.ParseBool(consoleXML.Enable)
-//	if enconErr != nil {
-//		return nil, enconErr
-//	}
-//	logger.EnableConsole(enableConsole)
-//	return logger, nil
-//}
+func configConsole(consoleXML consoleXML, logger *logger)(*logger, error)  {
+	selfLevel := consoleXML.SelfLevel
+	if selfLevel != "" {
+		consoleSelfLevel, consoleSelfLevelErr := parseLogLevel(selfLevel)
+		if consoleSelfLevelErr != nil {
+			return nil, errors.New("console self level cannot be parse")
+		}
+		logger.SetConsoleSelfLogLevel(consoleSelfLevel)
+	}
+	enable := consoleXML.Enable
+	if enable != "" {
+		enableConsole, enconErr := strconv.ParseBool(enable)
+		if enconErr != nil {
+			return nil, errors.New("console 'enable' value cannot be parsed to true or false")
+		}
+		logger.EnableConsole(enableConsole)
+	}
+	format, hasFormat := parseFormatRef(consoleXML.Format.Ref)
+	if hasFormat {
+		logger.SetConsoleFormat(format)
+	}
+	return logger, nil
+}
+
+func configWholeFiles(wholefiles wholefiles, logger *logger)(*logger, error)  {
+	for _, wholefile := range wholefiles.WholeFile {
+		path := wholefile.Path
+		if path != "" {
+			wf := NewWholeFile(wholefile.Path)
+			selfLevel := wholefile.SelfLevel
+			if selfLevel != "" {
+				wholefileSelfLevel, wfsErr := parseLogLevel(selfLevel)
+				if wfsErr != nil {
+					return nil, errors.New("wholefile selflevel cannot be parsed")
+				}
+				wf.SetWholeFileSelfLogLevel(wholefileSelfLevel)
+				format, hasFormat := parseFormatRef(wholefile.FormatId.Ref)
+				if hasFormat {
+					wf.SetWholeFileFormat(format)
+				}
+			}
+			logger.AddWholeFile(wf)
+		}
+	}
+	return logger, nil
+}
+
+func configDailyRollingFiles(dailyrollingfiles dailyrollingfiles, logger *logger)(*logger, error)  {
+	for _, dailyrollingfile := range dailyrollingfiles.DailyRollingFile {
+		path := dailyrollingfile.Path
+		if path != "" {
+			drf := NewDailyRollingFile(path)
+			selfLevelStr := dailyrollingfile.SelfLevel
+			if selfLevelStr != "" {
+				dailyrollingfileSelfLevel, drfLevelErr := parseLogLevel(selfLevelStr)
+				if drfLevelErr != nil {
+					return nil, errors.New("wholefile selflevel cannot be parsed")
+				}
+				drf.SetDailyRollingFileSelfLogLevel(dailyrollingfileSelfLevel)
+			}
+			daystr := dailyrollingfile.Day
+			if daystr != "" {
+				days, dayErr := strconv.ParseInt(daystr, 10, 64)
+				if dayErr != nil {
+					return nil, errors.New("dailyrollingfile day cannot be parsed to int")
+				}
+				drf.SetLogFiletMaxDays(int(days))
+				format, hasFormat := parseFormatRef(dailyrollingfile.FormatId.Ref)
+				if hasFormat {
+					drf.SetDailyRollingFileFormat(format)
+				}
+			}
+			logger.AddDailyRollingFile(drf)
+		}
+	}
+	return logger, nil
+}
+
+func configSizeRollingFiles(sizerollingfiles sizerollingfiles, logger *logger)(*logger, error)  {
+	for _, sizerollingfile := range sizerollingfiles.SizeRollingFile {
+		path := sizerollingfile.Path
+		if path != "" {
+			srf := NewSizeRollingFile(path)
+			selfLevelStr := sizerollingfile.SelfLevel
+			if selfLevelStr != "" {
+				srfLevel, srfLevelErr := parseLogLevel(selfLevelStr)
+				if srfLevelErr != nil {
+					return nil, errors.New("sizerollingfile selflevel cannot be parsed")
+				}
+				srf.SetSizeRollingFileSelfLogLevel(srfLevel)
+			}
+			sizeStr := sizerollingfile.Size
+			if sizeStr != "" {
+				size, sizeErr := strconv.ParseInt(sizeStr, 10, 64)
+				if sizeErr != nil {
+					return nil, errors.New("sizerollingfile size cannot be parsed to int")
+				}
+				if size < 0 {
+					return nil, errors.New("sizerollingfile size cannot <0")
+				}
+				srf.SetMaxSize(size * 1024 * 1024)
+			}
+			format, hasFormat := parseFormatRef(sizerollingfile.FormatId.Ref)
+			if hasFormat {
+				srf.SetSizeRollingFileFormat(format)
+			}
+			logger.AddSizeRollingFile(srf)
+		}
+	}
+	return logger, nil
+}
+
+func configDatabaseLog(databaselog databaselog, logger *logger)(*logger, error)  {
+	port, portErr := strconv.ParseInt(databaselog.Port, 10, 64)
+	if portErr != nil {
+		return nil, errors.New("databaselog port cannot be parsed to int64")
+	}
+	ip := net.ParseIP(databaselog.Ip)
+	if ip == nil {
+		return nil, errors.New("databaselog ip cannot be parsed to IP")
+	}
+	driver := databaselog.Driver
+	username := databaselog.Username
+	password := databaselog.Password
+	databaseName := databaselog.Databasename
+	switch "" {
+	case driver:
+		return nil, errors.New("databaselog driver is necessary")
+	case username:
+		return nil, errors.New("databaselog username is necessary")
+	case password:
+		return nil, errors.New("databaselog password is necessary")
+	case databaseName:
+		return nil, errors.New("databaselog databasename is necessary")
+	}
+	dbl := NewDatabaseLog(driver, username, password, ip.String(), port, databaseName)
+
+	tables := databaselog.Tables.Table
+	for _, table := range tables {
+		tableName := table.Name
+		if tableName != "" {
+			attributes := table.Attributes.Attribute
+			if len(attributes) == 0 {
+				return nil, errors.New("databaselog table "+tableName+"'attribute is necessary")
+			}
+			cols, colErr := parseAttributes(attributes)
+			if colErr != nil {
+				return nil, colErr
+			}
+			logTable := newLogTableXML(tableName, cols)
+			logTableSelfLevel, ltslErr := parseLogLevel(table.SelfLevel)
+			if ltslErr != nil {
+				return nil, errors.New("databaselog table "+tableName+"'s selflevel cannot be parsed")
+			}
+			logTable.SetTableSelfLevel(logTableSelfLevel)
+			dbl.AddTable(logTable)
+		}
+	}
+	logger.AddDatabaseLog(dbl)
+	return logger, nil
+}
+
+func configSmtpLog(smtplog smtplog, logger *logger)(*logger, error)  {
+	host := smtplog.Host
+	port := smtplog.Port
+	password := smtplog.Password
+	from := smtplog.From
+	switch "" {
+	case host:
+		return nil, errors.New("smtplog host is necessary")
+	case password:
+		return nil, errors.New("smtplog password is necessary")
+	case from:
+		return nil, errors.New("smtplog 'from' is necessary")
+	}
+	if !verifyEmailFormat(from){
+		return nil, errors.New("smtplog 'from' format error")
+	}
+	sl := NewSmtpLog(host, password, from, port, smtplog.Subject)
+	selfLevel := smtplog.SelfLevel
+	if selfLevel != "" {
+		smtpLogSelfLevel, smtpLevelErr := parseLogLevel(selfLevel)
+		if smtpLevelErr != nil {
+			return nil, errors.New("cannot parse smtolog selflevel")
+		}
+		sl.SetMailSelfLogLevel(smtpLogSelfLevel)
+	}
+	recipients := smtplog.Recipients.Recipient
+	if len(recipients)<= 0 {
+		return nil, errors.New("smtplog recipent is necessary")
+	}
+	for _, recpt := range recipients {
+		if !verifyEmailFormat(recpt){
+			return nil, errors.New("email recipient "+recpt+" format error")
+		}
+	}
+	sl.SetRecipient(smtplog.Recipients.Recipient)
+	logger.AddSmtpLog(sl)
+	return logger, nil
+}
+
+func parseFormatRef(ref string)(*format, bool)  {
+	if ref != "" {
+		frmt := formatMap[ref]
+		if !reflect.DeepEqual(frmt, formatXML{}) {
+			if frmt.Format !="" {
+				return NewFormat(frmt.Format), true
+			}
+		}
+	}
+	return nil, false
+}
+
+func checkErr(_ *logger, err error) {
+	if err != nil {
+		panic(err)
+	}
+}

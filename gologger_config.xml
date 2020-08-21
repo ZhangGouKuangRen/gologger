@@ -1,6 +1,6 @@
 <gologger globalLevel="debug">
     <console>
-        <enable>true</enable>
+        <enable></enable>
         <selflevel>debug</selflevel>
         <format ref="first"/>
     </console>
@@ -8,7 +8,7 @@
     <wholefiles>
         <wholefile>
             <path>./log/wholeFile.log</path>
-            <selflevel>debug</selflevel>
+            <selflevel>info</selflevel>
             <format ref="first"/>
         </wholefile>
         <wholefile>
@@ -19,6 +19,13 @@
     </wholefiles>
 
     <dailyrollingfiles>
+        <dailyrollingfile>
+            <path>./log/dailyrollingfile/dailyrollingfile.log</path>
+            <selflevel>trace</selflevel>
+            <format ref="first"/>
+            <day>2</day>
+        </dailyrollingfile>
+
         <dailyrollingfile>
             <path>./log/dailyrollingfile/dailyrollingfile.log</path>
             <selflevel>trace</selflevel>
@@ -36,7 +43,6 @@
         </sizerollingfile>
     </sizerollingfiles>
 
-
     <smtplog>
         <host>smtp.qq.com</host>
         <port>587</port>
@@ -53,7 +59,7 @@
     <databaselog>
         <driver>mysql</driver>
         <username>root</username>
-        <password>zhangqi</password>
+        <password>123456</password>
         <ip>127.0.0.1</ip>
         <port>3306</port>
         <databasename>log_test</databasename>
