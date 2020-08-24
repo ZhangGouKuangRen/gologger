@@ -113,12 +113,12 @@ func GetLoggerByXML(xmlconfig string) (*logger, error) {
 	gologgerXML := gologger{}
 	xml.Unmarshal(data, &gologgerXML)
 
-	consoleXML := gologgerXML.ConsoleXML
-	wholefiles := gologgerXML.Wholefiles
-	dailyrollingfiles := gologgerXML.DailyRollingFiles
-	sizerollingfiles := gologgerXML.SizeRollingFiles
-	databaselog := gologgerXML.DatabaseLog
-	smtplog := gologgerXML.Smtplog
+	console := gologgerXML.ConsoleXML
+	wholefile := gologgerXML.Wholefiles
+	dailyrollingfile := gologgerXML.DailyRollingFiles
+	sizerollingfile := gologgerXML.SizeRollingFiles
+	databaselg := gologgerXML.DatabaseLog
+	smtplg := gologgerXML.Smtplog
 
 	formatXMLs := gologgerXML.FormatXMLs
 	for _, formatXML := range formatXMLs.FormatXML {
@@ -126,12 +126,24 @@ func GetLoggerByXML(xmlconfig string) (*logger, error) {
 	}
 	logger := NewLogger(gologgerXML.GlobalLevel)
 
-	checkErr(configConsole(consoleXML, logger))
-	checkErr(configWholeFiles(wholefiles, logger))
-	checkErr(configDailyRollingFiles(dailyrollingfiles, logger))
-	checkErr(configSizeRollingFiles(sizerollingfiles, logger))
-	checkErr(configDatabaseLog(databaselog, logger))
-	checkErr(configSmtpLog(smtplog, logger))
+	if !reflect.DeepEqual(console, consoleXML{}){
+		checkErr(configConsole(console, logger))
+	}
+	if !reflect.DeepEqual(wholefile, wholefiles{}){
+		checkErr(configWholeFiles(wholefile, logger))
+	}
+	if !reflect.DeepEqual(dailyrollingfile, dailyrollingfiles{}){
+		checkErr(configDailyRollingFiles(dailyrollingfile, logger))
+	}
+	if !reflect.DeepEqual(sizerollingfile, sizerollingfiles{}){
+		checkErr(configSizeRollingFiles(sizerollingfile, logger))
+	}
+	if !reflect.DeepEqual(databaselg, databaselog{}){
+		checkErr(configDatabaseLog(databaselg, logger))
+	}
+	if !reflect.DeepEqual(smtplg, smtplog{}){
+		checkErr(configSmtpLog(smtplg, logger))
+	}
 	return logger, nil
 }
 
@@ -328,11 +340,11 @@ func configDatabaseLog(databaselog databaselog, logger *logger)(*logger, error) 
 	return logger, nil
 }
 
-func configSmtpLog(smtplog smtplog, logger *logger)(*logger, error)  {
-	host := smtplog.Host
-	port := smtplog.Port
-	password := smtplog.Password
-	from := smtplog.From
+func configSmtpLog(smtplg smtplog, logger *logger)(*logger, error)  {
+	host := smtplg.Host
+	port := smtplg.Port
+	password := smtplg.Password
+	from := smtplg.From
 	switch "" {
 	case host:
 		return nil, errors.New("smtplog host is necessary")
@@ -344,8 +356,8 @@ func configSmtpLog(smtplog smtplog, logger *logger)(*logger, error)  {
 	if !verifyEmailFormat(from){
 		return nil, errors.New("smtplog 'from' format error")
 	}
-	sl := NewSmtpLog(host, password, from, port, smtplog.Subject)
-	selfLevel := smtplog.SelfLevel
+	sl := NewSmtpLog(host, password, from, port, smtplg.Subject)
+	selfLevel := smtplg.SelfLevel
 	if selfLevel != "" {
 		smtpLogSelfLevel, smtpLevelErr := parseLogLevel(selfLevel)
 		if smtpLevelErr != nil {
@@ -353,7 +365,7 @@ func configSmtpLog(smtplog smtplog, logger *logger)(*logger, error)  {
 		}
 		sl.SetMailSelfLogLevel(smtpLogSelfLevel)
 	}
-	recipients := smtplog.Recipients.Recipient
+	recipients := smtplg.Recipients.Recipient
 	if len(recipients)<= 0 {
 		return nil, errors.New("smtplog recipent is necessary")
 	}
@@ -362,7 +374,7 @@ func configSmtpLog(smtplog smtplog, logger *logger)(*logger, error)  {
 			return nil, errors.New("email recipient "+recpt+" format error")
 		}
 	}
-	sl.SetRecipient(smtplog.Recipients.Recipient)
+	sl.SetRecipient(smtplg.Recipients.Recipient)
 	logger.AddSmtpLog(sl)
 	return logger, nil
 }

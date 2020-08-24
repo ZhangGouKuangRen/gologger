@@ -1,6 +1,6 @@
 <gologger globalLevel="debug">
     <console>
-        <enable></enable>
+        <enable>false</enable>
         <selflevel>debug</selflevel>
         <format ref="first"/>
     </console>
@@ -87,5 +87,4 @@
         <format id="first" format="[%Date %Time][%File %Func-%Line] [%Level] %Msg"/>
         <format id="second" format="[%Date %Time][%Level] %Msg"/>
     </formats>
-
 </gologger>

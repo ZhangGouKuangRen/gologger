@@ -1,9 +1,173 @@
 # gologger
 
 #### 介绍
-一个Go中使用的简单的日志处理包，包括Debug，Trace，Info，Warning，Error，Fatal六个级别的日志信息。目前支持向控制台和文件输出日志。文件日志分为file和rollingfile两种：file类型会产生一个整体的日志文件，产生的日志信息不断追加；rollingfile类型可以自定义一个日志文件的大小，当到达设定之后会保存该文件，然后创建一个新的文件写入日志。
+一个Go中使用的简单的日志处理包，包括Debug，Trace，Info，Warning，Error，Fatal六个级别的日志信息。可以输出日志到控制台、文件、邮件、数据库。文件日志分为wholefile、sizerollingfile和dailyrollingfile：whilefile类型会产生一个整体的日志文件，产生的日志信息不断追加；sizerollingfile类型可以自定义一个日志文件的大小，当到达设定之后会保存该文件，然后创建一个新的文件写入日志,dailyrollingfile会将每天产生的日志保存为一个独立的文件，可以设置要保存的日志的天数。
 
 #### 使用方法
+有两种使用方式：xml配置文件方式（推荐）和代码设置方式：
+
+（一）xml配置文件配置
+
+1：在项目中添加xml配置文件（注：由于没有dtd文件的约束，xml文件的格式请严格按照如下及注释描述编写)
+
+
+    <gologger globalLevel="debug">
+        <!-- 配置控制台(此标签及其子标签均为可选项） -->
+        <console>
+            <!--配置是否输出到控制台，默认为true>
+            <enable>false</enable>
+            <!--输出到控制台的日志的级别，支持的级别：debug,trace,info,warning,error,fatal>
+            <selflevel>debug</selflevel>
+            <!--日志格式，ref引用定义的format的id>
+            <format ref="first"/>
+        </console>
+    
+        <!-- 配置wholefile，可以在wholefile中配置多个wholefile，将日志输出到不同的wholefile文件。本例配置了两个wholefile。>
+        <!-- 此标签可选>
+        <wholefiles>
+            <!--此标签的path为必选标签>
+            <wholefile>
+                <!--日志输出文件路径>
+                <path>./log/wholeFile.log</path>
+                <!--输出到本文件的日志的级别，支持的级别：debug,trace,info,warning,error,fatal>
+                <selflevel>info</selflevel>
+                <!--日志格式，ref引用定义的format的id>
+                <format ref="first"/>
+            </wholefile>
+            <wholefile>
+                <path>./log/wholeFile2.log</path>
+                <selflevel>debug</selflevel>
+                <format ref="second"/>
+            </wholefile>
+        </wholefiles>
+    
+        <!-- 配置dailyrollingfile，可以配置多个，本例配置了两个>
+        <!-- 此标签可选>
+        <dailyrollingfiles>
+            <!--此标签的path为必选标签>
+            <dailyrollingfile>
+                <!--日志输出文件路径>
+                <path>./log/dailyrollingfile/dailyrollingfile.log</path>
+                <!--输出到本文件的日志的级别，支持的级别：debug,trace,info,warning,error,fatal>
+                <selflevel>trace</selflevel>
+                <!--日志格式，ref引用定义的format的id>
+                <format ref="first"/>
+                <!--保存日志文件的天数，如果为0，则保存过去每天的日志文件>
+                <day>2</day>
+            </dailyrollingfile>
+    
+            <dailyrollingfile>
+                <path>./log/dailyrollingfile/dailyrollingfile.log</path>
+                <selflevel>trace</selflevel>
+                <format ref="first"/>
+                <day>2</day>
+            </dailyrollingfile>
+        </dailyrollingfiles>
+        
+        <!-- 配置sizerollingfile，可以配置多个>
+        <!-- 此标签为可选标签>
+        <sizerollingfiles>
+            <!--此标签的path为必选标签>
+            <sizerollingfile>
+                <!--日志输出文件路径>
+                <path>./log/sizeRollingFile/sizeRollingFile.log</path>
+                <!--输出到本文件的日志的级别，支持的级别：debug,trace,info,warning,error,fatal>
+                <selflevel>info</selflevel>
+                <!--日志格式，ref引用定义的format的id>
+                <format ref="first"/>
+                <!--一个日志文件的最大容量,单位为Mb>
+                <size>1</size>
+            </sizerollingfile>
+        </sizerollingfiles>
+        
+        <!-- 配置日志输出到邮件>
+        <!-- 此标签为可选标签，如果配置该标签，其子标签host、port、password、from为必选标签>
+        <smtplog>
+            <!-- 邮件服务器host>
+            <host>smtp.qq.com</host>
+            <!--监听端口>
+            <port>587</port>
+            <!--授权码>
+            <password>aiaphwysppondfii</password>
+            <!--发件邮箱>
+            <from>3098086691@qq.com</from>
+            <!--日志邮件主题>
+            <subject>日志</subject>
+            <!--日志邮件发送级别，默认为error及以上>
+            <selflevel>debug</selflevel>
+            <!--邮件接收者,可以配多个>
+            <recipients>
+                <!-- 可以配置一个或多个>
+                <recipient>3098086691@qq.com</recipient>
+                <recipient>2287286256@qq.com</recipient>
+            </recipients>
+        </smtplog>
+    
+        <!-- 配置日志输出到数据库>
+        <!-- 此标签为可选标签，如果选择，其子标签dirver、username、password、ip、port、databasename为必选标签>
+        <databaselog>
+            <!--数据库驱动名称>
+            <driver>mysql</driver>
+            <!--数据库登录用户名>
+            <username>root</username>
+            <!--数据库密码>
+            <password>123456</password>
+            <!--数据库服务器ip>
+            <ip>127.0.0.1</ip>
+            <!--服务器端口>
+            <port>3306</port>
+            <!--数据库名称>
+            <databasename>log_test</databasename>
+            <tables>
+                <!--日志表，如果没有，会自动创建，可以有多个>
+                <table name="newlog">
+                    <!-- 输出到该表的日志的级别>
+                    <selflevel>debug</selflevel>
+                    <!- 该数据表的列，支持的attribute有：date、time、file、func、line、level、msg
+                    <attributes>
+                        <attribute name="date"/>
+                        <attribute name="time"/>
+                        <attribute name="msg"/>
+                    </attributes>
+                </table>
+                <table name="anotherlog">
+                    <selflevel>info</selflevel>
+                    <attributes>
+                        <attribute name="file"/>
+                        <attribute name="func"/>
+                        <attribute name="msg"/>
+                    </attributes>
+                </table>
+            </tables>
+        </databaselog>
+    
+        <formats>
+            <!--日志格式，支持的关键词：%Date，%Time，%File，%Func，%Line，%Level，%Msg>
+            <format id="first" format="[%Date %Time][%File %Func-%Line] [%Level] %Msg"/>
+            <format id="second" format="[%Date %Time][%Level] %Msg"/>
+        </formats>
+    </gologger>
+    
+    
+  使用方法：
+  
+  
+     在项目中添加xml配置文件，格式如上（一般添加到项目根目录）
+     eg:
+        logger, err := gologger.GetLoggerByXML("gologger_config.xml")
+        if err != nil {
+            panic(err)
+        }
+        defer logger.Flush()
+        logger.Debug("debug 测试")
+       
+    
+
+
+
+（二）代码设置方式
+
+
 1：创建logger对象(必选)
 
      创建一个日志对象，同时设定全局的日记记录级别（Debug，Trace，Info，Warning，Error，Fatal六种，不区分大小写）
@@ -93,7 +257,7 @@
              eg：logger.AddSmtpLog(smtpLog)
              
             
-     （6）输出日志到数据库（新）
+     （6）输出日志到数据库
         
          创建DatabaseLog对象，参数依次是：数据库驱动名，数据库系统账号，密码，数据库服务器ip，端口号，数据库名称
              eg：databaseLog := gologger.NewDatabaseLog("mysql", "root", "zhangqi", "127.0.0.1", 3306, "log_test")
@@ -112,7 +276,7 @@
         
 
 
-3：<a id="point1">设置日志格式format（可选）</a>
+3：设置日志格式format（可选）
 
 
     每一个wholeFile，sizeRollingFile、dailyRollingFile和console都可以设置日志输出的格式:
@@ -151,6 +315,28 @@
     eg：defer logger.Flush()
        
 #### 版本
+    v2.0.0
+        *增加使用xml配置文件的配置方式，简化配置过程
+        *修复若干bug
+
+    v1.5.0
+        *增加数据库日志功能
+            
+    v1.4.0
+        *增加邮件日志功能
+            
+    v1.3.1
+        *增加设定保存日志的天数功能
+            
+    v1.3.0
+        *增加每天日志自动分割功能
+        *修复日志异步写入bug
+
+    v1.2.0
+        *增加自定义日志格式功能，支持日志记录格式的私人定制
+        
+    v1.1.1
+        *修复了一个bug
     
     v1.1.0
         *完成日志的异步输出
@@ -158,26 +344,7 @@
         *可以给控制台console、整体日志file和rollingfile日志设置不同的日志记录格式
         *日志记录格式暂时不支持私人定制，只有内置的默认格式DefaultFormat()
         
-    v1.1.1
-        *修复了一个bug
-            
-    v1.2.0
-        *增加自定义日志格式功能，支持日志记录格式的私人定制
-        
-    v1.3.0
-        *增加每天日志自动分割功能
-        *修复日志异步写入bug
-        
-    v1.3.1
-        *增加设定保存日志的天数功能
-        
-    v1.4.0
-        *增加邮件日志功能
-        
-    v1.5.0
-        *增加数据库日志功能
-           
-           
+
 #### 联系
      邮箱:3098086691@qq.com
      Q Q: 3098086691
