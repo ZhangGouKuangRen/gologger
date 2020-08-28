@@ -21,25 +21,35 @@ func DefaultMailFormat()*mailFormat  {
 }
 
 func (mf *mailFormat)fmtMailMsg(msg *logMsg)string  {
-	parsedMsg := `<table border=1 cellspacing=0 width=100% style='text-align:center'>
-                    <tr>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>File</th>
-                        <th>Func</th>
-                        <th>Line</th>
-                        <th>Level</th>
-                        <th>Log</th>
-                    </tr>
-                    <tr>
-                        <td>`+mf.attributes["date"]+`
-                        <td>`+mf.attributes["time"]+`
-                        <td>`+msg.fileName+`
-                        <td>`+msg.funcName+`
-                        <td>`+fmt.Sprint(msg.line)+`
-                        <td>`+msg.levStr+`
-                        <td>`+msg.msg+`
-                    </tr>
-                </table`
+	//parsedMsg := `<table border=1 cellspacing=0 width=100% style='text-align:center'>
+    //                <tr>
+    //                    <th>Date</th>
+    //                    <th>Time</th>
+    //                    <th>File</th>
+    //                    <th>Func</th>
+    //                    <th>Line</th>
+    //                    <th>Level</th>
+    //                    <th>Log</th>
+    //                </tr>
+    //                <tr>
+    //                    <td>`+mf.attributes["date"]+`
+    //                    <td>`+mf.attributes["time"]+`
+    //                    <td>`+msg.fileName+`
+    //                    <td>`+msg.funcName+`
+    //                    <td>`+fmt.Sprint(msg.line)+`
+    //                    <td>`+msg.levStr+`
+    //                    <td>`+msg.msg+`
+    //                </tr>
+    //            </table`
+
+	parsedMsg := `<ul>
+                      <li>Date：`+mf.attributes["date"]+`</li>
+                      <li>Time：`+mf.attributes["time"]+`</li>
+                      <li>File：`+msg.fileName+`</li>
+                      <li>Func：`+msg.funcName+`</li>
+                      <li>Line：`+fmt.Sprint(msg.line)+`</li>
+                      <li>Level：`+msg.levStr+`</li>
+                      <li>Log：`+msg.msg+`</li>
+                   </ul>`
 	return parsedMsg
 }
