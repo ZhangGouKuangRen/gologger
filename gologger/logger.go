@@ -2,6 +2,7 @@ package gologger
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -116,6 +117,8 @@ func (lgr *Logger)backgroundWriteLog()  {
 //格式化记录
 func (lgr *Logger)log(levStr, logmsg string)  {
 	pc, fileName, line, _ := runtime.Caller(3)
+	obpath, _ := os.Getwd()
+	fileName = "."+fileName[len(obpath):]
 	funcName := runtime.FuncForPC(pc).Name()
 	logMsg := &logMsg{
 		levStr: levStr,

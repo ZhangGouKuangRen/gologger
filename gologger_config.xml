@@ -1,6 +1,6 @@
 <gologger globalLevel="debug">
     <console>
-        <enable>false</enable>
+        <enable>true</enable>
         <selflevel>debug</selflevel>
         <format ref="first"/>
     </console>
@@ -34,27 +34,27 @@
         </dailyrollingfile>
     </dailyrollingfiles>
 
-    <sizerollingfiles>
-        <sizerollingfile>
-            <path>./log/sizeRollingFile/sizeRollingFile.log</path>
-            <selflevel>info</selflevel>
-            <format ref="first"/>
-            <size>1</size>
-        </sizerollingfile>
-    </sizerollingfiles>
+<!--    <sizerollingfiles>-->
+<!--        <sizerollingfile>-->
+<!--            <path>./log/sizeRollingFile/sizeRollingFile.log</path>-->
+<!--            <selflevel>info</selflevel>-->
+<!--            <format ref="first"/>-->
+<!--            <size>1</size>-->
+<!--        </sizerollingfile>-->
+<!--    </sizerollingfiles>-->
 
-    <smtplog>
-        <host>smtp.qq.com</host>
-        <port>587</port>
-        <password>aiaphwysppondfii</password>
-        <from>3098086691@qq.com</from>
-        <subject>日志</subject>
-        <selflevel>debug</selflevel>
-        <recipients>
-            <recipient>3098086691@qq.com</recipient>
-            <recipient>2287286256@qq.com</recipient>
-        </recipients>
-    </smtplog>
+<!--    <smtplog>-->
+<!--        <host>smtp.qq.com</host>-->
+<!--        <port>587</port>-->
+<!--        <password>aiaphwysppondfii</password>-->
+<!--        <from>3098086691@qq.com</from>-->
+<!--        <subject>日志</subject>-->
+<!--        <selflevel>debug</selflevel>-->
+<!--        <recipients>-->
+<!--            <recipient>3098086691@qq.com</recipient>-->
+<!--            <recipient>2287286256@qq.com</recipient>-->
+<!--        </recipients>-->
+<!--    </smtplog>-->
 
     <databaselog>
         <driver>mysql</driver>
