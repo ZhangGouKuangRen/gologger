@@ -315,6 +315,9 @@
     eg：defer logger.Flush()
        
 #### 版本
+    v2.0.1
+        *改变邮件日志格式：从html的table——>ul/li
+        *扩大Logger的访问权限：logger(包可见)——>Logger(全局可见)
     v2.0.0
         *增加使用xml配置文件的配置方式，简化配置过程
         *修复若干bug

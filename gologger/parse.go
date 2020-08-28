@@ -34,7 +34,7 @@ func parseLogLevel(levelMsg string) (logLevel, error) {
 }
 
 //日志级别比较
-func (lgr *logger) enableLog(level logLevel) bool {
+func (lgr *Logger) enableLog(level logLevel) bool {
 	if lgr.level <= level {
 		return true
 	} else {
@@ -42,83 +42,83 @@ func (lgr *logger) enableLog(level logLevel) bool {
 	}
 }
 
-func (lgr *logger) parseMsgf(levStr, format string, a ...interface{}) {
+func (lgr *Logger) parseMsgf(levStr, format string, a ...interface{}) {
 	msg := fmt.Sprintf(format, a...)
 	lgr.log(levStr, msg)
 }
-func (lgr *logger) parseMsg(levStr string, a ...interface{}) {
+func (lgr *Logger) parseMsg(levStr string, a ...interface{}) {
 	msg := fmt.Sprint(a...)
 	lgr.log(levStr, msg)
 }
 
 //Debug级别日志
-func (lgr *logger) Debugf(format string, a ...interface{}) {
+func (lgr *Logger) Debugf(format string, a ...interface{}) {
 	if lgr.enableLog(DEBUG) {
 		lgr.parseMsgf("Debug", format, a...)
 	}
 }
 
-func (lgr *logger) Tracef(format string, a ...interface{}) {
+func (lgr *Logger) Tracef(format string, a ...interface{}) {
 	if lgr.enableLog(TRACE) {
 		lgr.parseMsgf("Trace", format, a...)
 	}
 }
 
-func (lgr *logger) Infof(format string, a ...interface{}) {
+func (lgr *Logger) Infof(format string, a ...interface{}) {
 	if lgr.enableLog(INFO) {
 		lgr.parseMsgf("Info", format, a...)
 	}
 }
 
-func (lgr *logger) Warningf(format string, a ...interface{}) {
+func (lgr *Logger) Warningf(format string, a ...interface{}) {
 	if lgr.enableLog(WARNING) {
 		lgr.parseMsgf("Warning", format, a...)
 	}
 }
 
-func (lgr *logger) Errorf(format string, a ...interface{}) {
+func (lgr *Logger) Errorf(format string, a ...interface{}) {
 	if lgr.enableLog(ERROR) {
 		lgr.parseMsgf("Error", format, a...)
 	}
 }
 
-func (lgr *logger) Fatalf(format string, a ...interface{}) {
+func (lgr *Logger) Fatalf(format string, a ...interface{}) {
 	if lgr.enableLog(FATAL) {
 		lgr.parseMsgf("Fatal", format, a...)
 	}
 }
 
-func (lgr *logger) Debug(a ...interface{}) {
+func (lgr *Logger) Debug(a ...interface{}) {
 	if lgr.enableLog(DEBUG) {
 		lgr.parseMsg("Debug", a...)
 	}
 }
 
-func (lgr *logger) Trace(a ...interface{}) {
+func (lgr *Logger) Trace(a ...interface{}) {
 	if lgr.enableLog(TRACE) {
 		lgr.parseMsg("Trace", a...)
 	}
 }
 
-func (lgr *logger) Info(a ...interface{}) {
+func (lgr *Logger) Info(a ...interface{}) {
 	if lgr.enableLog(INFO) {
 		lgr.parseMsg("Info", a...)
 	}
 }
 
-func (lgr *logger) Warning(a ...interface{}) {
+func (lgr *Logger) Warning(a ...interface{}) {
 	if lgr.enableLog(WARNING) {
 		lgr.parseMsg("Warning", a...)
 	}
 }
 
-func (lgr *logger) Error(a ...interface{}) {
+func (lgr *Logger) Error(a ...interface{}) {
 	if lgr.enableLog(ERROR) {
 		lgr.parseMsg("Error", a...)
 	}
 }
 
-func (lgr *logger) Fatal(a ...interface{}) {
+func (lgr *Logger) Fatal(a ...interface{}) {
 	if lgr.enableLog(FATAL) {
 		lgr.parseMsg("Fatal", a...)
 	}

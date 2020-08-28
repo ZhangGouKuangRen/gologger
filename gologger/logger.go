@@ -18,7 +18,7 @@ const (
 	ERROR
 	FATAL
 )
-type logger struct {
+type Logger struct {
     level logLevel
     wholeFiles []*wholeFile
     sizeRollingFiles []*sizeRollingFile
@@ -46,13 +46,13 @@ type logMsg struct {
 var csl console
 
 //初始化一个logger对象
-func NewLogger(levelMsg string)*logger  {
+func NewLogger(levelMsg string)*Logger {
 	grteNum := 1
 	level, err := parseLogLevel(levelMsg)
 	if err != nil {
 		panic(err)
 	}
-	lgr := logger{
+	lgr := Logger{
 		level: level,
 		enconsole: true,
 		logMsgChan: make(chan *logMsg, 1000),
@@ -69,11 +69,11 @@ func NewLogger(levelMsg string)*logger  {
 	return &lgr
 }
 
-func (lgr *logger)EnableConsole(b bool){
+func (lgr *Logger)EnableConsole(b bool){
 	lgr.enconsole = b
 }
 
-func (lgr *logger)backgroundWriteLog()  {
+func (lgr *Logger)backgroundWriteLog()  {
 	//lgr.wg.Add(1)
 	lgr.mutex.Lock()
 	var getMsg bool
@@ -114,7 +114,7 @@ func (lgr *logger)backgroundWriteLog()  {
 }
 
 //格式化记录
-func (lgr *logger)log(levStr, logmsg string)  {
+func (lgr *Logger)log(levStr, logmsg string)  {
 	pc, fileName, line, _ := runtime.Caller(3)
 	funcName := runtime.FuncForPC(pc).Name()
 	logMsg := &logMsg{
@@ -138,33 +138,33 @@ func (lgr *logger)log(levStr, logmsg string)  {
 }
 
 //生成一条格式化日志
-func (lgr *logger)createLog(levStr, msg string, a ...interface{})string  {
+func (lgr *Logger)createLog(levStr, msg string, a ...interface{})string  {
 	msg = fmt.Sprintf(msg, a...)
 	return msg
 }
 
-func (lgr *logger)AddWholeFile(fil *wholeFile)  {
+func (lgr *Logger)AddWholeFile(fil *wholeFile)  {
 	lgr.wholeFiles = append(lgr.wholeFiles, fil)
 }
-func (lgr *logger)AddSizeRollingFile(rf *sizeRollingFile)  {
+func (lgr *Logger)AddSizeRollingFile(rf *sizeRollingFile)  {
 	lgr.sizeRollingFiles = append(lgr.sizeRollingFiles, rf)
 }
 
-func (lgr *logger)AddDailyRollingFile(rf *dailyRollingFile)  {
+func (lgr *Logger)AddDailyRollingFile(rf *dailyRollingFile)  {
 	lgr.dailyRollingFiles = append(lgr.dailyRollingFiles, rf)
 }
 
-func (lgr *logger)AddSmtpLog(smtplog *smtpLog)  {
+func (lgr *Logger)AddSmtpLog(smtplog *smtpLog)  {
 	lgr.useSmtp = true
 	lgr.smtpLog = smtplog
 }
 
-func (lgr *logger)AddDatabaseLog(databaseLog *databaseLog)  {
+func (lgr *Logger)AddDatabaseLog(databaseLog *databaseLog)  {
 	lgr.useDatabaseLog = true
 	lgr.databaseLog = databaseLog
 }
 
-func (lgr *logger)Flush(){
+func (lgr *Logger)Flush(){
 	lgr.wg.Wait()
 	for _, wholeFile := range lgr.wholeFiles {
 		wholeFile.ofile.Close()

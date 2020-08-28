@@ -105,7 +105,7 @@ type recipients struct {
 	Recipient []string `xml:"recipient"`
 }
 
-func GetLoggerByXML(xmlconfig string) (*logger, error) {
+func GetLoggerByXML(xmlconfig string) (*Logger, error) {
 	data, dataErr := ioutil.ReadFile(xmlconfig)
 	if dataErr != nil {
 		return nil, dataErr
@@ -178,7 +178,7 @@ func verifyEmailFormat(email string) bool {
 	return reg.MatchString(email)
 }
 
-func configConsole(consoleXML consoleXML, logger *logger)(*logger, error)  {
+func configConsole(consoleXML consoleXML, logger *Logger)(*Logger, error)  {
 	selfLevel := consoleXML.SelfLevel
 	if selfLevel != "" {
 		consoleSelfLevel, consoleSelfLevelErr := parseLogLevel(selfLevel)
@@ -202,7 +202,7 @@ func configConsole(consoleXML consoleXML, logger *logger)(*logger, error)  {
 	return logger, nil
 }
 
-func configWholeFiles(wholefiles wholefiles, logger *logger)(*logger, error)  {
+func configWholeFiles(wholefiles wholefiles, logger *Logger)(*Logger, error)  {
 	for _, wholefile := range wholefiles.WholeFile {
 		path := wholefile.Path
 		if path != "" {
@@ -225,7 +225,7 @@ func configWholeFiles(wholefiles wholefiles, logger *logger)(*logger, error)  {
 	return logger, nil
 }
 
-func configDailyRollingFiles(dailyrollingfiles dailyrollingfiles, logger *logger)(*logger, error)  {
+func configDailyRollingFiles(dailyrollingfiles dailyrollingfiles, logger *Logger)(*Logger, error)  {
 	for _, dailyrollingfile := range dailyrollingfiles.DailyRollingFile {
 		path := dailyrollingfile.Path
 		if path != "" {
@@ -256,7 +256,7 @@ func configDailyRollingFiles(dailyrollingfiles dailyrollingfiles, logger *logger
 	return logger, nil
 }
 
-func configSizeRollingFiles(sizerollingfiles sizerollingfiles, logger *logger)(*logger, error)  {
+func configSizeRollingFiles(sizerollingfiles sizerollingfiles, logger *Logger)(*Logger, error)  {
 	for _, sizerollingfile := range sizerollingfiles.SizeRollingFile {
 		path := sizerollingfile.Path
 		if path != "" {
@@ -290,7 +290,7 @@ func configSizeRollingFiles(sizerollingfiles sizerollingfiles, logger *logger)(*
 	return logger, nil
 }
 
-func configDatabaseLog(databaselog databaselog, logger *logger)(*logger, error)  {
+func configDatabaseLog(databaselog databaselog, logger *Logger)(*Logger, error)  {
 	port, portErr := strconv.ParseInt(databaselog.Port, 10, 64)
 	if portErr != nil {
 		return nil, errors.New("databaselog port cannot be parsed to int64")
@@ -340,7 +340,7 @@ func configDatabaseLog(databaselog databaselog, logger *logger)(*logger, error) 
 	return logger, nil
 }
 
-func configSmtpLog(smtplg smtplog, logger *logger)(*logger, error)  {
+func configSmtpLog(smtplg smtplog, logger *Logger)(*Logger, error)  {
 	host := smtplg.Host
 	port := smtplg.Port
 	password := smtplg.Password
@@ -391,7 +391,7 @@ func parseFormatRef(ref string)(*format, bool)  {
 	return nil, false
 }
 
-func checkErr(_ *logger, err error) {
+func checkErr(_ *Logger, err error) {
 	if err != nil {
 		panic(err)
 	}
